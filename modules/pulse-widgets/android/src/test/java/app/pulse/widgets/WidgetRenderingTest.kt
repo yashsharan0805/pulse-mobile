@@ -52,6 +52,8 @@ class WidgetRenderingTest {
       while (parent is View && parent !== view) { y += parent.top; parent = parent.parent }
       assertTrue("$name: image $id clips below widget ($y + ${image.height} > $h)", y + image.height <= h)
       assertTrue("$name: image $id clips above widget", y >= 0)
+      val footer = view.findViewById<View>(R.id.widget_status)
+      assertTrue("$name: image $id overlaps sync footer", y + image.height <= footer.top + 2)
     }
     return view
   }
@@ -67,6 +69,10 @@ class WidgetRenderingTest {
     val configuration = android.content.res.Configuration(context.resources.configuration).apply { fontScale = 1.3f }
     context.resources.updateConfiguration(configuration, context.resources.displayMetrics)
     render(WidgetSize.LARGE, 250, 280, "large-large-font")
+  }
+  @Test @Config(sdk = [30]) fun minimumLayoutAlsoFitsBeforeAndroid12() {
+    RuntimeEnvironment.setQualifiers("w360dp-h800dp-night-xhdpi")
+    render(WidgetSize.LARGE, 250, 280, "large-android11")
   }
   @Test fun oldDayAndMissingDataRenderWithoutRetainingValues() {
     val old = snapshot().put("day", "2026-10-28")
