@@ -77,7 +77,7 @@ docs/         rewrite-plan.md, plan.md, design/spec.md, learning.md, onboarding.
 ## Git
 
 - Use the `git` CLI only, never `gh`.
-- Commit as `adityaongit`, email `74150665+adityaongit@users.noreply.github.com`. Check `git config user.email` before committing.
+- On this fork, commit using the fork owner's identity (`Yash Sharan`, `52700320+yashsharan0805@users.noreply.github.com`), preserving upstream authorship and copyright. Check `git config user.email` before committing.
 - Conventional commit messages, signed off (`git commit -s`).
 - Once typecheck, lint, test and the bundle check pass and the change has been tried on the phone, fast-forward `origin/main`. Never force-push.
 

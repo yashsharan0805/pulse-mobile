@@ -12,9 +12,9 @@ const BAR = "rounded-md bg-foreground/10";
 // Reduced motion holds it still.
 const PULSE = {
   animationName: { "50%": { opacity: 0.5 } },
-  animationDuration: "2s",
+  animationDuration: "2s" as const,
   animationIterationCount: "infinite" as const,
-  animationTimingFunction: "ease-in-out",
+  animationTimingFunction: "ease-in-out" as const,
 };
 
 function Bar({ className, style, ...props }: ViewProps) {
