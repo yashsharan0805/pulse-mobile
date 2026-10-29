@@ -1,6 +1,6 @@
 # Pulse: start a workout and record live vitals
 
-Status: implementation preview 0.4.2, Android version code 3, 29 October 2026. The owner replaced the Hevy-style strength-log priority with a Fitbit-style activity recorder. Native recording, pause/resume/finish, sample persistence, estimated load, circular HR UI and personal history are implemented. Physical Fitbit Air and locked-screen validation remain outstanding. [Earlier Hevy findings](hevy-investigation.md) remain research, while sets, reps, routines and exercise libraries are deferred. Optional Google Drive recovery/sync remains a later extension.
+Status: implementation preview 0.4.2, Android version code 4, 29 October 2026. The owner replaced the Hevy-style strength-log priority with a Fitbit-style activity recorder. Native recording, pause/resume/finish, sample persistence, estimated load, circular HR UI and personal history are implemented. Physical Fitbit Air and locked-screen validation remain outstanding. [Earlier Hevy findings](hevy-investigation.md) remain research, while sets, reps, routines and exercise libraries are deferred. Optional Google Drive recovery/sync remains a later extension.
 
 ## Intended experience
 
@@ -172,3 +172,11 @@ New recorder copy is in the English `workouts` namespace. Other languages use th
 - Expo Android prebuild and standalone Metro/Hermes export passed.
 - ARM64 release-variant APK assembly and Android release vital lint passed.
 - Hardware acceptance checks above remain open. No device/emulator automation was run.
+
+## Emulator checks for Workout Preview 2
+
+The owner explicitly authorized emulator testing for this run. An Android 16 / API 36 ARM64 Google Play emulator installed and cold-launched the release APK, opened Live workout before health onboarding, and correctly kept Start disabled without a connected HR sensor.
+
+A debug build of the same native recorder was used to seed a clearly synthetic interrupted workout (121 one-second samples, 113–137 bpm). No simulation interface was added to production code. The app restored the fixture, resumed its foreground service, advanced the clock during an eight-second screen lock, and kept the HR sample count/load unchanged without a sensor. Pause held active time fixed for six seconds. Pause remained available with Bluetooth disabled. A force-stop/relaunch recovered the workout as interrupted without adding the process-death gap. Finishing through the confirmation dialog persisted a completed session and exactly 121 SQLite samples, with no duplicated replay.
+
+Emulator review also fixed the unsupported large-HR font token and separated Reconnect from Pause so a missing sensor cannot hide Pause. Preview 2 raises Android version code to 4 and retains the existing fork test-signing certificate. The release build is checked separately after the emulator workflow. Real Fitbit Air pairing, incoming live samples and OEM battery behavior remain physical-phone checks; the synthetic run is not evidence of Bluetooth compatibility.

@@ -71,11 +71,12 @@ export function WorkoutRecorderScreen() {
       <Text className="text-center text-sm text-foreground-secondary">{t(status === "paused" ? "recorder.status.paused" : status === "interrupted" ? "recorder.status.interrupted" : "recorder.status.recording")}</Text>
       {!!state.active.error && <Text accessibilityLiveRegion="polite" className="text-sm text-warning-text">{t(`recorder.errors.${state.active.error}`, { defaultValue: t("recorder.errors.connectionLost") })}</Text>}
       <View className="flex-row gap-3">
-        <Button className="flex-1" variant="secondary" disabled={state.busy} onPress={() => void workoutRecorder.command(status === "recording" && state.active?.link !== "lost" ? "pause" : "resume")}>
-          {t(status === "recording" ? state.active.link === "lost" ? "recorder.reconnect" : "recorder.pause" : "recorder.resume")}
+        <Button className="flex-1" variant="secondary" disabled={state.busy} onPress={() => void workoutRecorder.command(status === "recording" ? "pause" : "resume")}>
+          {t(status === "recording" ? "recorder.pause" : "recorder.resume")}
         </Button>
         <Button className="flex-1" disabled={state.busy} onPress={finish}>{t("recorder.finish")}</Button>
       </View>
+      {status === "recording" && state.active.link === "lost" && <Button variant="secondary" disabled={state.busy} onPress={() => void workoutRecorder.command("resume")}>{t("recorder.reconnect")}</Button>}
       <Text className="text-xs leading-5 text-muted-foreground">{t("recorder.backgroundHint")}</Text>
     </View>
   ) : (
@@ -156,7 +157,7 @@ function HeartRateRing({ bpm, maxHr, zone, active }: { bpm: number | null; maxHr
         <Circle cx={110} cy={110} r={92} fill="none" stroke={c.strain} strokeWidth={10} strokeLinecap="round" strokeDasharray={`${circumference} ${circumference}`} strokeDashoffset={circumference * (1 - ratio)} rotation={-90} origin="110,110" />
       </Svg>
       <Text className="text-xs font-bold uppercase tracking-widest text-foreground-secondary">{i18n.t(active ? "workouts:recorder.liveHr" : "workouts:recorder.heartRate")}</Text>
-      <Text className="font-numeric text-6xl font-bold">{number(bpm)}</Text>
+      <Text className="font-numeric text-[64px] leading-[72px] font-bold">{number(bpm)}</Text>
       <Text className="text-sm text-muted-foreground">{i18n.t("workouts:recorder.bpm")}</Text>
     </View>
     <Text className="text-sm text-foreground-secondary">{zone === null ? i18n.t("workouts:recorder.waiting") : i18n.t("workouts:recorder.zone", { zone })}</Text>

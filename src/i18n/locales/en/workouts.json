@@ -1,7 +1,7 @@
 {
   "recorder": {
     "title": "Live workout",
-    "subtitle": "Start a session and record your heart rate and cardio load.",
+    "subtitle": "Heart rate, zones and cardio load.",
     "start": "Start workout",
     "newWorkout": "New workout",
     "pause": "Pause",
