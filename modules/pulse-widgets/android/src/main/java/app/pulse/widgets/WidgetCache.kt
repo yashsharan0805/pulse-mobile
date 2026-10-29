@@ -20,7 +20,7 @@ internal object WidgetCache {
   fun write(context: Context, text: String, expectedEpoch: Long): Boolean = synchronized(lock) {
     require(text.toByteArray(Charsets.UTF_8).size <= 65_536) { "Widget snapshot is too large" }
     val data = JSONObject(text)
-    require(data.optInt("version") == 1 && data.optJSONArray("metrics")?.length() == 8) { "Unsupported widget snapshot" }
+    require(data.optInt("version") == 1 && (data.optJSONArray("metrics")?.length() ?: 0) in 8..9) { "Unsupported widget snapshot" }
     if (epoch(context) != expectedEpoch) return false
     val target = file(context)
     val stream = target.startWrite()
@@ -35,8 +35,8 @@ internal object WidgetCache {
     check(saved)
   }
   fun selection(context: Context, id: Int, size: WidgetSize): List<String> {
-    val saved = settings(context).getString("metrics_$id", null)?.split(',').orEmpty().filter { it in METRIC_KEYS }.distinct()
-    return saved.take(size.count).ifEmpty { METRIC_KEYS.take(size.count) }
+    val saved = settings(context).getString("metrics_$id", null)?.split(',').orEmpty().filter { it in METRIC_KEYS && (size != WidgetSize.LARGE || it != "heart_rate") }.distinct()
+    return saved.take(size.count).ifEmpty { DEFAULT_KEYS.take(size.count) }
   }
   fun saveSelection(context: Context, id: Int, selected: List<String>, size: WidgetSize) {
     require(selected.isNotEmpty() && selected.size <= size.count && selected.distinct().size == selected.size && selected.all { it in METRIC_KEYS })
@@ -46,7 +46,8 @@ internal object WidgetCache {
     settings(context).edit().apply { ids.forEach { remove("metrics_$it") } }.apply()
   }
 }
-internal val METRIC_KEYS = listOf("recovery", "strain", "sleep", "steps", "calories", "hrv", "rhr", "stress")
+internal val METRIC_KEYS = listOf("sleep", "recovery", "strain", "steps", "calories", "hrv", "rhr", "stress", "heart_rate")
+private val DEFAULT_KEYS = listOf("sleep", "recovery", "strain", "steps", "calories", "hrv")
 internal enum class WidgetSize(val count: Int, val layout: Int) {
   SMALL(1, R.layout.pulse_widget_small), MEDIUM(3, R.layout.pulse_widget_medium), LARGE(6, R.layout.pulse_widget_large);
   companion object {

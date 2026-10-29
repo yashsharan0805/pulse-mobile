@@ -18,6 +18,7 @@
       },
       "predictiveBackGestureEnabled": true,
       "package": "in.portlabs.pulse",
+      "versionCode": 2,
       "permissions": [
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_DISTANCE",

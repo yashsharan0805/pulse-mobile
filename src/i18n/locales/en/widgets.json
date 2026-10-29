@@ -1,7 +1,11 @@
 {
   "title": "Home screen widgets",
   "about": "See your last synced Pulse metrics without opening the app. Widgets display health information on your home screen; add them only where you are comfortable showing it.",
-  "sizes": { "small": "Small · one metric", "medium": "Medium · three metrics", "large": "Large · six metrics" },
+  "sizes": {
+    "small": "Small \u00b7 one metric",
+    "medium": "Medium \u00b7 three metrics",
+    "large": "Large \u00b7 six metrics + heart rate"
+  },
   "add": "Add widget",
   "added": "Confirm the widget on your home screen, then choose its metrics.",
   "manual": "Your launcher does not offer in-app pinning. Long-press your home screen, choose Widgets, then Pulse.",
@@ -17,9 +21,25 @@
   "state": {
     "demo": "Sample data",
     "updated": "Synced",
-    "stale": "Older sync · open Pulse",
+    "stale": "Older sync \u00b7 open Pulse",
     "open": "Open Pulse and sync to see your data",
     "today": "Open Pulse for today's data",
-    "provisional": "Estimate"
+    "provisional": "Estimate",
+    "reading": "Reading",
+    "oldReading": "Older reading",
+    "noReading": "No heart-rate reading",
+    "heartWindow": "30 min before reading"
+  },
+  "chooseLarge": "Choose up to %1$d metrics. Heart rate is always included in the large widget.",
+  "labels": {
+    "sleep": "Sleep",
+    "recovery": "Recovery",
+    "strain": "Strain",
+    "steps": "Steps",
+    "calories": "Calories",
+    "hrv": "HRV",
+    "rhr": "Resting HR",
+    "stress": "Stress",
+    "heart_rate": "Heart rate"
   }
 }

@@ -24,11 +24,11 @@ class WidgetConfigureActivity : Activity() {
     val selected = (savedInstanceState?.getStringArrayList("selected") ?: WidgetCache.selection(this, id, size)).toMutableSet()
     val column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(40), dp(24), dp(24)) }
     column.addView(TextView(this).apply { setText(R.string.pulse_widget_configure); textSize = 26f })
-    column.addView(TextView(this).apply { text = getString(R.string.pulse_widget_choose, size.count); textSize = 15f; setPadding(0, dp(16), 0, dp(20)) })
+    column.addView(TextView(this).apply { text = getString(if (size == WidgetSize.LARGE) R.string.pulse_widget_choose_large else R.string.pulse_widget_choose, size.count); textSize = 15f; setPadding(0, dp(16), 0, dp(20)) })
     val snapshot = WidgetCache.read(this)?.optJSONArray("metrics")
     val names = mutableMapOf<String, String>()
     if (snapshot != null) for (i in 0 until snapshot.length()) snapshot.optJSONObject(i)?.let { names[it.optString("key")] = it.optString("label") }
-    for (key in METRIC_KEYS) column.addView(CheckBox(this).apply {
+    for (key in METRIC_KEYS.filter { size != WidgetSize.LARGE || it != "heart_rate" }) column.addView(CheckBox(this).apply {
       text = names[key]?.takeIf { it.isNotBlank() } ?: metricLabel(this@WidgetConfigureActivity, key)
       textSize = 17f
       minHeight = dp(48)

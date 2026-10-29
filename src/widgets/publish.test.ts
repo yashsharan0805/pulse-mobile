@@ -6,6 +6,7 @@ import { clearWidgets, refreshWidgets } from "./publish";
 const mocks = vi.hoisted(() => ({ available: vi.fn(() => true), installed: vi.fn(() => true), epoch: vi.fn(async () => 7), publish: vi.fn(async () => {}), clear: vi.fn(async () => {}), readSource: vi.fn(async () => "health_connect" as string | null), home: vi.fn<(...args: unknown[]) => Promise<HomeVM>>(), build: vi.fn(() => ({ version: 1 })) }));
 vi.mock("../../modules/pulse-widgets", () => ({ widgetsAvailable: mocks.available, hasWidgets: mocks.installed, widgetEpoch: mocks.epoch, publishSnapshot: mocks.publish, clearSnapshot: mocks.clear }));
 vi.mock("@react-native-async-storage/async-storage", () => ({ default: { getItem: mocks.readSource } }));
+vi.mock("@/health/live", () => ({ storedRecentHeartRate: async () => ({ latest: null, samples: [] }) }));
 vi.mock("@/queries/home", () => ({ getHome: mocks.home }));
 vi.mock("./model", () => ({ buildWidgetSnapshot: mocks.build }));
 const ctx = { store: { getProfile: async () => ({}) }, today: "2026-10-29", now: 1793260800, timeZone: "UTC", sync: { lastSyncTs: null } } as unknown as QueryCtx;

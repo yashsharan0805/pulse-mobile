@@ -1,6 +1,6 @@
 # Android home screen widgets
 
-The widget implementation lives on the fork's `feat/android-widgets` branch. It supports three providers: Small (one metric), Medium (up to three), and Large (up to six). Each instance chooses from Recovery, Day Strain, Sleep Performance, Steps, Calories, HRV, Resting Heart Rate and Stress Monitor. Existing scoring and Health Connect permissions are unchanged.
+The widget implementation lives on the fork's `feat/android-widgets` branch. It supports three providers: Small (one metric), Medium (up to three), and Large (up to six, plus a dedicated heart-rate card). Each instance chooses from Recovery, Day Strain, Sleep Performance, Steps, Calories, HRV, Resting Heart Rate and Stress Monitor; Small/Medium also offer Heart Rate as a selectable metric. Existing scoring and Health Connect permissions are unchanged.
 
 ## Use
 
@@ -10,9 +10,9 @@ Launcher grid sizes vary. The target footprints are 2×2, 4×2 and 4×4; provide
 
 ## Data, freshness and privacy
 
-- Widgets use `getHome` through the existing Store interface, not additional Health Connect reads or a second scoring engine. Foreground and existing background sync publish after scoring; app writes/display-language changes also refresh the projection. When no widget is installed, these hooks skip the Home query; Settings can prepare the first summary before pinning. A first widget added through the gallery may prompt you to open Pulse and sync.
-- Only a versioned summary is written to an app-private atomic file in `noBackupFilesDir`. It contains the eight displayed metrics, labels and freshness metadata, without raw records or profile details. The launcher receives the rendered values: add widgets only where displaying health information is appropriate. No network, new permission, service or wake lock is added.
-- Values retain the existing nullable/provisional states. Missing or nonfinite numbers display `--`, with an explanation; genuine zero remains zero. Strain labels retain values above 100%, while the progress track caps at 100%.
+- Widgets use `getHome` and the same stored recent-heart-rate helper as Home through the existing Store interface, not additional Health Connect reads or a second scoring engine. Foreground and existing background sync publish after scoring; app writes/display-language changes and newly imported foreground heart-rate samples also refresh the projection. When no widget is installed, these hooks skip the Home query; Settings can prepare the first summary before pinning. A first widget added through the gallery may prompt you to open Pulse and sync.
+- Only a versioned summary is written to an app-private atomic file in `noBackupFilesDir`. It contains the nine available metrics, labels and freshness metadata, without raw records or profile details. The launcher receives the rendered values: add widgets only where displaying health information is appropriate. No network, new permission, service or wake lock is added.
+- Values retain the existing nullable/provisional states. Missing or nonfinite numbers display `--`, with an explanation; genuine zero remains zero. Strain labels retain values above 100%, while the ring caps at 100%.
 - The footer shows the original Health Connect sync time, or a stale warning when over three hours old. Sample data is explicitly marked. If the snapshot's local day differs from today in the profile time zone, values are suppressed until Pulse refreshes. Native scheduled redraws re-evaluate this state from the cache, without waking the JavaScript runtime for a health read.
 - Android may delay scheduled/background work. The nominal 30-minute widget redraw and existing background sync do not promise exact timing or live readings. Day rollover and stale warnings appear on the next host redraw, sync or app refresh.
 - Reset clears the summary and redraws installed widgets as empty; switching between sample data and Health Connect also clears before replacing data. Non-health per-widget metric preferences survive. JavaScript generation checks and a native invalidation epoch captured at sync start prevent a publication already in flight from restoring a cleared summary. Uninstall removes the cache and preferences.
@@ -58,3 +58,29 @@ Automated test/build results and their limits belong in the change's review note
 - `git diff --check`: passed.
 
 These are local checks. No full APK assembly, installed-app exercise, device automation, physical Fitbit test or hosted CI run is claimed. Owner phone validation above is required before merging to main/releasing.
+
+## Circular layout and heart rate (preview 2)
+
+Score dials use Pulse's colored progress rings with white/dark foreground values, rather than horizontal progress bars. RemoteViews ImageViews display bounded native Canvas bitmaps; the native renderer handles widget dimensions and keeps the content together. Other selected metrics use compact cards. Existing metric selections are preserved; newly added widgets default to Sleep, Recovery and Strain in Home order.
+
+Large always includes a dedicated Heart Rate card in addition to its six configurable metrics. Small and Medium can select Heart Rate from the metric picker. The card shows the latest **stored** sample's bpm and actual measurement time/age, plus the 30 minutes ending at that sample. Missing minutes stay gaps; no line is fabricated across them. Future, nonfinite or nonpositive readings display no value. The timestamp is separate from the full-sync footer; an older last-known measurement is explicitly marked. Bluetooth streaming is not exposed as a live background widget feed.
+
+The existing foreground ticker publishes when it imports new heart-rate samples, reusing the Store-backed helper. Background widgets still follow the existing sync/redraw schedule; this adds no new Health Connect read or background service. A summary predating the current profile-local day stays suppressed until refreshed. Native code accepts preview 1's eight-metric cache and the new nine-metric cache; opening Pulse and syncing adds heart-rate data to existing widgets.
+
+Native JVM tests use Robolectric 4.17 with native graphics to inflate/draw the actual RemoteViews layouts, test minimum sizes, light/dark and 130% font scale, check empty/previous-day states, verify the uncapped Strain label, and exercise old-cache/reset invalidation. This is a host-side render, not device or launcher automation. Tests save synthetic previews under the module's ignored `android/build/widget-previews/` directory:
+
+```sh
+./android/gradlew -p android :pulse-widgets:testDebugUnitTest
+```
+
+For local full release assembly, the SDK's original 512 MiB metadata limit was insufficient for R8/lint. Use command-local memory settings (no generated native edits):
+
+```sh
+./android/gradlew -p android :app:assembleRelease \
+  -PreactNativeArchitectures=arm64-v8a -Pexpo.useLegacyPackaging=true \
+  '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1536m' --max-workers=2
+```
+
+Preview 2 uses Android version code 2 and the same test signing key as preview 1 so it can update the earlier fork APK. The official app has a different key. After updating, open Pulse and sync once; launchers retaining an old cached appearance may need the widget removed and re-added. New physical-phone/launcher validation is still required.
+
+Preview 2 source validation: 2,015 JavaScript tests across 156 files passed, typecheck passed, lint passed with the same eight pre-existing warnings, Android prebuild/Metro export passed, and all six native Robolectric render/cache tests passed. Synthetic minimum-size, dark/light and 130% font-scale renders were visually inspected. Full APK assembly and signature/update verification are recorded in the prerelease notes when completed.
