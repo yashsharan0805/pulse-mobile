@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
-import android.net.Uri
 import android.os.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -24,13 +23,13 @@ class WorkoutService : Service() {
     @Volatile var runningId: String? = null
     @Volatile var snapshot: String? = null
     private val requests = ConcurrentHashMap<String, CompletableFuture<String>>()
-    private const val CHANNEL = "pulse-workout-recording"
     private const val NOTIFICATION = 3741
     private val SERVICE = UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb")
     private val MEASUREMENT = UUID.fromString("00002a37-0000-1000-8000-00805f9b34fb")
     private val CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
     fun request(ctx: Context, action: String, body: JSONObject): CompletableFuture<String> {
+      if (action == "start" || action == "resume") require(WorkoutNotification.enabled(ctx)) { "notificationPermission" }
       val key = UUID.randomUUID().toString()
       val result = CompletableFuture<String>()
       requests[key] = result
@@ -64,7 +63,7 @@ class WorkoutService : Service() {
     super.onCreate()
     thread = HandlerThread("PulseWorkout").apply { start() }
     worker = Handler(thread.looper)
-    val channel = NotificationChannel(CHANNEL, getString(R.string.pulse_workout_channel), NotificationManager.IMPORTANCE_LOW)
+    val channel = NotificationChannel(WorkoutNotification.CHANNEL, getString(R.string.pulse_workout_channel), NotificationManager.IMPORTANCE_LOW)
     channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
     getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
   }
@@ -113,6 +112,7 @@ class WorkoutService : Service() {
       WorkoutJournal.setActive(this, runningId)
       acquireWake()
       connect()
+      updateNotification()
       worker.post(tick)
       return
     }
@@ -341,31 +341,7 @@ class WorkoutService : Service() {
     }
   }
   private fun releaseWake() { if (wake?.isHeld == true) wake?.release(); wake = null }
-  private fun label(key: String, fallback: Int) = meta?.optJSONObject("labels")?.optString(key)?.takeIf { it.isNotBlank() } ?: getString(fallback)
-  private fun notification(): Notification {
-    val m = meta
-    val paused = m?.optString("status") == "paused"
-    val id = m?.optString("id")
-    val open = Intent(Intent.ACTION_VIEW, Uri.parse("pulse:///workout-live"), this, Class.forName("${packageName}.MainActivity"))
-      .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-    val pending = PendingIntent.getActivity(this, 1, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-    val builder = Notification.Builder(this, CHANNEL).setSmallIcon(android.R.drawable.ic_media_play)
-      .setContentTitle(label("title", R.string.pulse_workout_title)).setContentIntent(pending)
-      .setContentText(when {
-        paused -> label("paused", R.string.pulse_workout_paused)
-        m?.optString("link") == "live" -> label("recording", R.string.pulse_workout_recording)
-        else -> label("waiting", R.string.pulse_workout_waiting)
-      }).setOngoing(true).setOnlyAlertOnce(true).setVisibility(Notification.VISIBILITY_PRIVATE)
-    if (id != null) {
-      for ((index, action) in listOf(if (paused) "resume" else "pause", "finish").withIndex()) {
-        val intent = Intent(this, WorkoutService::class.java).setAction(action).putExtra("body", JSONObject().put("id", id).toString())
-        val control = PendingIntent.getService(this, index + 10, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val resource = when (action) { "pause" -> R.string.pulse_workout_pause; "resume" -> R.string.pulse_workout_resume; else -> R.string.pulse_workout_finish }
-        builder.addAction(Notification.Action.Builder(null, label(action, resource), control).build())
-      }
-    }
-    return builder.build()
-  }
+  private fun notification(): Notification = WorkoutNotification.build(this, meta)
   private fun updateNotification() { getSystemService(NotificationManager::class.java).notify(NOTIFICATION, notification()) }
   override fun onDestroy() {
     worker.removeCallbacksAndMessages(null)

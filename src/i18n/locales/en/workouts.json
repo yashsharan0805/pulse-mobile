@@ -1,4 +1,5 @@
 {
+  "tab": "Workout",
   "recorder": {
     "title": "Live workout",
     "subtitle": "Heart rate, zones and cardio load.",
@@ -28,6 +29,7 @@
     "loadMore": "Load more",
     "saving": "Saving…",
     "retry": "Retry",
+    "notificationSettings": "Open notification settings",
     "findSensor": "Find heart-rate sensor",
     "scanning": "Looking for sensors…",
     "sensor": "Heart-rate sensor",
@@ -55,6 +57,7 @@
       "other": "Other workout"
     },
     "errors": {
+      "notificationPermission": "Allow Pulse notifications and the Workout recording channel before starting or resuming. The ongoing notification shows your timer and workout controls.",
       "nativeUnavailable": "This build does not include the workout recorder. Install the new Android build to record sessions.",
       "storage": "Workout data could not be saved or read. Free storage and retry. Existing recordings have not been reset.",
       "commandFailed": "The action could not be confirmed. Check the current workout state and retry.",

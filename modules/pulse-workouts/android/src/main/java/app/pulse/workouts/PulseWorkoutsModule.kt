@@ -8,6 +8,9 @@ import java.util.UUID
 class PulseWorkoutsModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("PulseWorkouts")
+    AsyncFunction("notificationsEnabled") {
+      WorkoutNotification.enabled(requireNotNull(appContext.reactContext))
+    }
     AsyncFunction("start") { config: String ->
       val ctx = requireNotNull(appContext.reactContext)
       val body = JSONObject(config).put("id", UUID.randomUUID().toString())

@@ -1,6 +1,7 @@
 import { requireOptionalNativeModule } from "expo";
 
 type Native = {
+  notificationsEnabled(): Promise<boolean>;
   start(config: string): Promise<string>;
   command(id: string, action: string): Promise<string>;
   active(): Promise<string | null>;
@@ -19,6 +20,7 @@ function required(): Native {
 }
 /** Native owns the Bluetooth link and journal even when the React screen is gone. */
 export const workoutNative = {
+  notificationsEnabled: () => required().notificationsEnabled(),
   start: (config: unknown) => required().start(JSON.stringify(config)),
   command: (id: string, action: "pause" | "resume" | "finish") => required().command(id, action),
   active: () => required().active(),

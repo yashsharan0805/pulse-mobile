@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { Alert, View } from "react-native";
+import { Alert, Linking, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { i18n } from "@/i18n/config";
@@ -13,7 +13,8 @@ import { workoutNativeAvailable } from "../../../modules/pulse-workouts";
 import { Button } from "@/ui/Button";
 import { Text } from "@/ui/Text";
 import { useTheme } from "@/ui/theme";
-import { DetailShell } from "@/ui/shells/DetailShell";
+import { DetailShell, type DetailShellProps } from "@/ui/shells/DetailShell";
+import { PageShell } from "@/ui/shells/PageShell";
 import { SectionShell } from "@/ui/shells/SectionShell";
 import { IntradayHrChart } from "@/ui/charts/IntradayHrChart";
 import { zoneOf, zonesOf } from "@/core/engine/strain";
@@ -23,7 +24,7 @@ const EMPTY_CALIBRATION: WorkoutCalibration = { restingHr: null, maxHr: null, se
 const number = (value: number | null) => value === null ? "—" : Math.round(value).toLocaleString();
 
 /** Owns no capture state: leaving/reopening this screen cannot finish or reset a workout. */
-export function WorkoutRecorderScreen() {
+export function WorkoutRecorderScreen({ tab = false }: { tab?: boolean }) {
   const { t } = useTranslation("workouts");
   const state = useSyncExternalStore(workoutRecorder.subscribe, workoutRecorder.getSnapshot, workoutRecorder.getSnapshot);
   const band = useLiveBleControl();
@@ -115,12 +116,13 @@ export function WorkoutRecorderScreen() {
       {summary.load.provisional && summary.load.value !== null && <Text className="mt-2 text-xs text-muted-foreground">{t("recorder.provisional")}</Text>}
     </SectionShell>
   );
-  return <DetailShell
+  return <WorkoutShell tab={tab}
     title={session ? t(`recorder.types.${session.type}`) : t("recorder.title")}
     subtitle={session ? new Date(session.startedAt).toLocaleString() : t("recorder.subtitle")}
     hero={<HeartRateRing bpm={bpm} maxHr={maxHr} zone={zone} active={!!state.active} />}
     primary={<View className="gap-3">
       {!!state.error && <View className="gap-2"><Text accessibilityLiveRegion="assertive" className="text-sm text-warning-text">{t(`recorder.errors.${state.error}`, { defaultValue: t("recorder.errors.commandFailed") })}</Text><Button variant="secondary" onPress={() => void workoutRecorder.refresh()}>{t("recorder.retry")}</Button></View>}
+      {state.error === "notificationPermission" && <Button variant="secondary" onPress={() => void Linking.openSettings()}>{t("recorder.notificationSettings")}</Button>}
       {controls}
     </View>}
     secondary={[
@@ -141,6 +143,18 @@ export function WorkoutRecorderScreen() {
       </SectionShell>,
     ].filter((node) => node !== null)}
   />;
+}
+
+function WorkoutShell({ tab, ...props }: DetailShellProps & { tab: boolean }) {
+  if (!tab) return <DetailShell {...props} />;
+  return <PageShell title={i18n.t("workouts:tab")}>
+    <View className="gap-8">
+      <Text className="text-center text-sm text-foreground-secondary">{props.subtitle}</Text>
+      {props.hero}
+      {props.primary}
+      <View className="gap-3">{props.secondary}</View>
+    </View>
+  </PageShell>;
 }
 
 function Stat({ label, value }: { label: string; value: string }) {

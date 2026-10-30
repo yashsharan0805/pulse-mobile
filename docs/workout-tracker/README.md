@@ -1,6 +1,6 @@
 # Pulse: start a workout and record live vitals
 
-Status: implementation preview 0.4.2, Android version code 4, 29 October 2026. The owner replaced the Hevy-style strength-log priority with a Fitbit-style activity recorder. Native recording, pause/resume/finish, sample persistence, estimated load, circular HR UI and personal history are implemented. Physical Fitbit Air and locked-screen validation remain outstanding. [Earlier Hevy findings](hevy-investigation.md) remain research, while sets, reps, routines and exercise libraries are deferred. Optional Google Drive recovery/sync remains a later extension.
+Status: implementation preview 0.4.2, Android version code 5, 30 October 2026. The owner replaced the Hevy-style strength-log priority with a Fitbit-style activity recorder. Native recording, pause/resume/finish, sample persistence, estimated load, circular HR UI and personal history are implemented. Physical Fitbit Air and locked-screen validation remain outstanding. [Earlier Hevy findings](hevy-investigation.md) remain research, while sets, reps, routines and exercise libraries are deferred. Optional Google Drive recovery/sync remains a later extension.
 
 ## Intended experience
 
@@ -180,3 +180,13 @@ The owner explicitly authorized emulator testing for this run. An Android 16 / A
 A debug build of the same native recorder was used to seed a clearly synthetic interrupted workout (121 one-second samples, 113–137 bpm). No simulation interface was added to production code. The app restored the fixture, resumed its foreground service, advanced the clock during an eight-second screen lock, and kept the HR sample count/load unchanged without a sensor. Pause held active time fixed for six seconds. Pause remained available with Bluetooth disabled. A force-stop/relaunch recovered the workout as interrupted without adding the process-death gap. Finishing through the confirmation dialog persisted a completed session and exactly 121 SQLite samples, with no duplicated replay.
 
 Emulator review also fixed the unsupported large-HR font token and separated Reconnect from Pause so a missing sensor cannot hide Pause. Preview 2 raises Android version code to 4 and retains the existing fork test-signing certificate. The release build is checked separately after the emulator workflow. Real Fitbit Air pairing, incoming live samples and OEM battery behavior remain physical-phone checks; the synthetic run is not evidence of Bluetooth compatibility.
+
+
+## Workout Preview 3
+
+Open **Workout** in the bottom bar (between Health and Journal) to start or return to a session and browse saved history. More and existing notification links also open this tab after onboarding. Before onboarding, the existing standalone recorder remains available.
+
+Start/resume requests notification access and checks that the Workout recording channel is enabled. If denied, Pulse explains what to enable and offers system settings. Pause and Finish remain usable. The native foreground-service notification is ongoing through recording, waiting for a sensor and pause, with an active timer (frozen while paused), Pause/Resume and Finish controls. It opens the Workout tab and is removed when finished. It uses private lock-screen visibility and does not display health readings. Android notification settings and user dismissal remain under the owner's control.
+
+
+Preview 3 verification: typecheck, lint (eight existing warnings), 2,027 JavaScript tests, 13 native tests, standalone Android bundle export and the ARM64 release build passed. The release APK was installed as an update on the Android 16 / API 36 emulator. The five-tab layout and selected Workout tab were verified. Denying the system notification prompt kept the fixture interrupted and showed the permission/settings explanation; granting access allowed resume. Android reported the notification as ongoing, foreground and private. Its Pause action froze elapsed time at 5:53 across separate observations; Resume restarted the chronometer. Recording continued on Health, and tapping the notification returned to Workout. Its Finish action removed the notification. These checks used a pre-seeded 121-sample synthetic fixture, with no live HR peripheral.

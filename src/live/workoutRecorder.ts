@@ -2,6 +2,7 @@ import { AppState } from "react-native";
 import { i18n } from "@/i18n/config";
 import { appStore } from "@/state/app";
 import { liveBle } from "@/health/ble";
+import { askNotificationPermission } from "@/background/notify";
 import { workoutNative, workoutNativeAvailable } from "../../modules/pulse-workouts";
 import { parseRecordedWorkout, parseWorkoutSample, type RecordedWorkout, type WorkoutSample, type WorkoutType } from "./workout";
 
@@ -89,12 +90,13 @@ class WorkoutRecorder {
     try { if (this.polling) await this.polling; await run(); }
     catch (error) {
       const message = error instanceof Error ? error.message : "";
-      const known = ["nativeUnavailable", "activeWorkout", "bluetoothPermission", "bluetoothOff", "invalidSession"];
+      const known = ["nativeUnavailable", "activeWorkout", "bluetoothPermission", "bluetoothOff", "invalidSession", "notificationPermission"];
       this.patch({ error: known.find((code) => message.includes(code)) ?? "commandFailed" });
     } finally { this.patch({ busy: false }); await this.refresh(); }
   }
   start = (type: WorkoutType, calibration: WorkoutCalibration) => this.action(async () => {
     if (!workoutNativeAvailable) throw new Error("nativeUnavailable");
+    await this.requireNotification();
     const band = liveBle.getSnapshot();
     const device = band.device ?? band.remembered;
     if (!device) throw new Error("bluetoothPermission");
@@ -114,10 +116,16 @@ class WorkoutRecorder {
   command = (action: "pause" | "resume" | "finish") => this.action(async () => {
     const active = this.state.active;
     if (!active) return;
+    if (action === "resume") await this.requireNotification();
     const session = parseRecordedWorkout(await workoutNative.command(active.id, action));
     await this.ingest(session);
     if (session.status === "completed") this.selectedId = session.id;
   });
+  private async requireNotification() {
+    if (await askNotificationPermission() !== "granted" || !await workoutNative.notificationsEnabled()) {
+      throw new Error("notificationPermission");
+    }
+  }
   view = (id: string | null) => {
     if (this.state.active) return;
     this.selectedId = id;
